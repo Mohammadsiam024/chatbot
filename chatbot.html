@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-xl rounded-2xl w-full max-w-md flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 text-white text-center py-4 font-bold text-xl">
+            🤖 AI Chatbot
+        </div>
+
+        <!-- Chat Window -->
+        <div id="chat-window" class="flex-1 p-4 overflow-y-auto space-y-4">
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="flex p-4 border-t border-gray-200">
+            <input type="text" id="message" placeholder="Type your message..."
+                   class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button onclick="sendMessage()"
+                    class="ml-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById("chat-window");
+
+        // Function to add messages to chat
+        function addMessage(message, sender) {
+            const msgDiv = document.createElement("div");
+            msgDiv.className = sender === "user" ? "text-right" : "text-left";
+            msgDiv.innerHTML = `
+                <div class="inline-block ${sender === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"} 
+                    rounded-xl px-4 py-2 max-w-xs break-words">
+                    ${message}
+                </div>
+            `;
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Send message to Flask API
+        async function sendMessage() {
+            const input = document.getElementById("message");
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, "user");  // Add user message
+            input.value = "";
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({message: msg})
+                });
+                const data = await response.json();
+                addMessage(data.reply, "bot");  // Add bot reply
+            } catch (err) {
+                addMessage("Error: Unable to reach server.", "bot");
+            }
+        }
+
+        // Optional: Send message on Enter key
+        document.getElementById("message").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") sendMessage();
+        });
+    </script>
+</body>
+</html>
